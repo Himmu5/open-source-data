@@ -1,0 +1,5 @@
+fastapi
+boto3
+BeautifulSoup4
+requests
+uvicorn

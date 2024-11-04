@@ -2,15 +2,18 @@ import requests
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
 import json
+from s3_session import upload_json_to_s3
 
 app = FastAPI()
 
 @app.get("/")
-def read_root():
+async def read_root():
     data = get_incidents()
     actorhtml = get_actors()
     threats = save_incidents(data)
     actors = save_actors(actorhtml)
+    await upload_json_to_s3(actors, 'actors.json')
+    await upload_json_to_s3(threats, 'incidents.json')
     final_data = {'threats': threats, 'actors': actors}
     return final_data
 
@@ -38,7 +41,7 @@ def save_incidents(data):
     incedents=soup.find_all('tbody', class_='notion-collection-table__body')
     threats = []
     for e in incedents[0]:
-        threat = {} 
+        threat = {}
         threat['title'] = e.find('td', class_='title').text.strip()
         threat['actor'] = e.find('td', class_='relation').text.strip()
         threat['status'] = e.find('td', class_='status').text.strip()
