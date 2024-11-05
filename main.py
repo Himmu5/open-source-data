@@ -8,14 +8,34 @@ app = FastAPI()
 
 @app.get("/")
 async def read_root():
-    data = get_incidents()
-    actorhtml = get_actors()
+    data = get_raw_data('all-incidents')
+    actorhtml = get_raw_data("all-actors")
+    techniques_html = get_raw_data('all-techniques')
     threats = save_incidents(data)
     actors = save_actors(actorhtml)
+    techniques = save_techniques(techniques_html)
+
+    await upload_json_to_s3(techniques, 'techniques.json')
     await upload_json_to_s3(actors, 'actors.json')
     await upload_json_to_s3(threats, 'incidents.json')
-    final_data = {'threats': threats, 'actors': actors}
+    final_data = {'threats': threats, 'actors': actors, 'techniques': techniques}
     return final_data
+
+def save_techniques(data):
+    soup = BeautifulSoup(data.content, 'html.parser')
+    techniques_data = soup.find('tbody', class_='notion-collection-table__body')
+    techniques = []
+    for e in techniques_data:
+        technique = {}
+        technique['title'] = e.find('td', class_='title').text.strip()
+        technique['tags'] = e.find('td', class_='multi_select').text.strip()
+        technique['relation'] = e.find('td', class_='relation').text.strip()
+        technique['status'] = e.find('td', class_='status').text.strip()
+
+        techniques.append(technique)
+    with open('techniques.json', 'w') as f:
+        json.dump(techniques, f)
+    return techniques
 
 def save_actors(data):
     soup = BeautifulSoup(data.content, 'html.parser')
@@ -54,10 +74,6 @@ def save_incidents(data):
         json.dump(threats, f)
     return threats
 
-def get_actors():
-    response = requests.get("https://threats.wiz.io/all-actors")
-    return response
-
-def get_incidents():
-    response = requests.get("https://threats.wiz.io/all-incidents")
+def get_raw_data(url: str):
+    response = requests.get("https://threats.wiz.io/"+url)
     return response
