@@ -1,8 +1,11 @@
 import boto3
+import json
 from fastapi import UploadFile, HTTPException
 
 def create_client():
     return boto3.client('s3', region_name="us-east-1")
+
+
 
 async def upload_json_to_s3(file, fileName):
     s3_client=create_client()
@@ -24,3 +27,12 @@ async def upload_json_to_s3(file, fileName):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+async def get_file_from_s3(file_name):
+    s3 = boto3.resource('s3')
+    try:
+        obj = s3.Object('threat-data-wiz', file_name)
+        data=obj.get()['Body'].read()
+        return json.loads(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
