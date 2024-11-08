@@ -1,6 +1,6 @@
 import boto3
 import json
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException
 
 def create_client():
     return boto3.client('s3', region_name="us-east-1")

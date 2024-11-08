@@ -5,13 +5,23 @@ from techniques import save_techniques
 from actor import save_actors
 from incidents import save_incidents
 from s3_session import get_file_from_s3
-import json
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/wiz/scrapper")
 async def read_root():
-    
+
     data = get_raw_data('all-incidents')
     actorhtml = get_raw_data("all-actors")
     techniques_html = get_raw_data('all-techniques')
